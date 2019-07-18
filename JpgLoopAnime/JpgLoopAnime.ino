@@ -48,7 +48,6 @@ void setup() {
     file.read(fbuf.back(), fbufsize.back());
     file = root.openNextFile();
   }
-  SD.end();
 }
 
 void loop() {
