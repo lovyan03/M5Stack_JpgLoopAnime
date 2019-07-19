@@ -86,7 +86,8 @@ private:
     uint8_t h = rect->bottom + 1 - y;
     uint8_t line;
 
-    p += x + width * (y % ((1 + me->_lineskip) << 4));
+//    p += x + width * (y % ((1 + me->_lineskip) << 4));
+    p += x;
     while (h--) {
       dst = p;
       line = w;
