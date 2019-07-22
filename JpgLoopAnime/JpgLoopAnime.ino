@@ -10,9 +10,9 @@
 MainClass main;
 
 // ここで画像ファイルのディレクトリ名を指定する
-static std::vector<String> imageDirs = {"/image_dirname1", "/image_dirname2"};
-static uint8_t dirIndex = 0;
+std::vector<String> imageDirs = {"/image_dirname1", "/image_dirname2"};
 
+uint8_t dirIndex = 0;
 std::vector<uint8_t*> fbuf;
 std::vector<int32_t> fbufsize;
 uint32_t fpsCount = 0, fpsSec = 0;
