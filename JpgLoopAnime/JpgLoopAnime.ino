@@ -21,7 +21,9 @@ uint32_t fpsCount = 0, fpsSec = 0;
 bool loadImages(const String& path)
 {
   bool res = false;
-  for (int i = 0; i < fbuf.size(); i++) free(const_cast<uint8_t*>(fbuf[i]));
+  if (!fbuf.empty() && fbuf[0] != image_000_jpg) {
+    for (int i = 0; i < fbuf.size(); i++) free(const_cast<uint8_t*>(fbuf[i]));
+  }
   fbuf.clear();
   fbufsize.clear();
   Serial.println(path);
@@ -96,14 +98,14 @@ void loop() {
   for (int i = 0; i < fbuf.size(); i++) {
     M5.update();
     if (M5.BtnB.wasPressed() || M5.BtnC.wasPressed()) {
-      delay(100);
+      main.wait();
       do {
         dirIndex = (dirIndex + (M5.BtnC.wasPressed() ? 1 : M5.BtnB.wasPressed() ? imageDirs.size() - 1 : 0)) % imageDirs.size();
       } while (!loadImages(imageDirs[dirIndex]));
       M5.Lcd.fillRect(0,0,M5.Lcd.width(),M5.Lcd.height(),0);
       break;
     }
-//  M5.Lcd.drawJpg(fbuf[i], fbufsize[i]);
+//    M5.Lcd.drawJpg(fbuf[i], fbufsize[i]);
     main.drawJpg(fbuf[i], fbufsize[i]);
     fpsCount++;
     if (fpsSec != millis() / 1000) {
@@ -114,7 +116,7 @@ void loop() {
   }
 
   for (int i = fbuf.size() - 2; i != 0; i--) {
-//      M5.Lcd.drawJpg(fbuf[i], fbufsize[i]);
+//    M5.Lcd.drawJpg(fbuf[i], fbufsize[i]);
     main.drawJpg(fbuf[i], fbufsize[i]);
     fpsCount++;
     if (fpsSec != millis() / 1000) {

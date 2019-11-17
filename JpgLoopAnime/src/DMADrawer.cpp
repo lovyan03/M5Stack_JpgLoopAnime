@@ -60,7 +60,7 @@ void DMADrawer::init(const setup_t& s)
         .cs_ena_posttrans = 0,
         .clock_speed_hz = s.tft_spi_freq * 100000,
         .input_delay_ns = 0,
-        .spics_io_num = (gpio_num_t)s.pin_tft_cs,
+        .spics_io_num = 0,
         .flags = SPI_DEVICE_NO_DUMMY,
         .queue_size = 6,
         .pre_cb = lcd_spi_pre_transfer_callback,

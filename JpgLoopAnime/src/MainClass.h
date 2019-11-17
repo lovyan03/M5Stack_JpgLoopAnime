@@ -45,6 +45,8 @@ public:
     return true;
   }
 
+  void wait() { delay(10); _dma.wait(); }
+
 private:
   DMADrawer _dma;
   uint16_t* _dmabufs[2];
