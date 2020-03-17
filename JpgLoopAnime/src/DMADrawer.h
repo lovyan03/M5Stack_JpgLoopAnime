@@ -23,8 +23,8 @@ public:
 
 private:
   spi_device_handle_t _spi_handle = NULL;
-  uint16_t _last_x, _last_y, _last_w, _last_h;
-  uint16_t _offset_x, _offset_y;
+  uint_fast16_t _last_x, _last_y, _last_w, _last_h;
+  uint_fast16_t _offset_x, _offset_y;
   spi_transaction_t _trans[6];
   bool _sent[6];
   gpio_num_t _tft_dc, _tft_cs;

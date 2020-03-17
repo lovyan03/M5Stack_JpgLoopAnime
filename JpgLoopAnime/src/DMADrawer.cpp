@@ -7,13 +7,8 @@
 void DMADrawer::lcd_spi_pre_transfer_callback(spi_transaction_t *t)
 {
   gpio_set_level(((DMADrawer*)t->user)->_tft_dc, (t->length != 8));
-  gpio_set_level(((DMADrawer*)t->user)->_tft_cs, 0);
 }
 
-void DMADrawer::lcd_spi_post_transfer_callback(spi_transaction_t *t)
-{
-  gpio_set_level(((DMADrawer*)t->user)->_tft_cs, 1);
-}
 
 void DMADrawer::init(const setup_t& s)
 {
@@ -64,7 +59,7 @@ void DMADrawer::init(const setup_t& s)
         .flags = SPI_DEVICE_NO_DUMMY,
         .queue_size = 6,
         .pre_cb = lcd_spi_pre_transfer_callback,
-        .post_cb = lcd_spi_post_transfer_callback};
+        .post_cb = nullptr};
     ESP_ERROR_CHECK(spi_bus_add_device((s.port == VSPI) ? VSPI_HOST : HSPI_HOST, &devcfg, &_spi_handle));
   }
 }
@@ -79,9 +74,11 @@ void DMADrawer::draw(uint16_t x, uint16_t y, uint16_t w, uint16_t h, void* data)
   esp_err_t ret;
   spi_transaction_t *tr;
 
+  gpio_set_level(_tft_cs, 0);
+
   x += _offset_x;
   y += _offset_y;
-  for (uint8_t i = 0; i < 6; i++)
+  for (size_t i = 0; i < 6; i++)
   {
     if (_sent[i]) {
       _sent[i] = false;
@@ -150,6 +147,7 @@ void DMADrawer::wait()
     ret = spi_device_get_trans_result(_spi_handle, &rtrans, portMAX_DELAY);
     assert(ret == ESP_OK);
   }
+  gpio_set_level(_tft_cs, 1);
 }
 
 //------------------------------------------------------------------

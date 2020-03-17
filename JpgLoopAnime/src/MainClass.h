@@ -57,10 +57,10 @@ private:
   const uint8_t* _filebuf;
   uint32_t _fileindex;
 
-  uint16_t _tft_width;
-  uint16_t _tft_height;
-  uint16_t _jpg_x;
-  uint16_t _jpg_y;
+  uint_fast16_t _tft_width;
+  uint_fast16_t _tft_height;
+  uint_fast16_t _jpg_x;
+  uint_fast16_t _jpg_y;
 
   static uint16_t jpgRead(TJpgD *jdec, uint8_t *buf, uint16_t len) {
     MainClass* me = (MainClass*)jdec->device;
@@ -77,23 +77,19 @@ private:
     MainClass* me = (MainClass*)jdec->device;
     uint16_t *p = me->_dmabuf;
     uint16_t *data = (uint16_t*)bitmap;
-    uint16_t *dst;
-    uint16_t width = jdec->width;
-    uint16_t x = rect->left;
-    uint16_t y = rect->top;
-    uint8_t w = rect->right + 1 - x;
-    uint8_t h = rect->bottom + 1 - y;
-    uint8_t line;
+    uint_fast16_t width = jdec->width;
+    uint_fast16_t x = rect->left;
+    uint_fast16_t y = rect->top;
+    uint_fast8_t w = rect->right + 1 - x;
+    uint_fast8_t h = rect->bottom + 1 - y;
+    if (w < 0 || h < 0) return 1;
 
     p += x;
-    while (h--) {
-      dst = p;
-      line = w;
-      while (line--) {
-        *dst++ = *data++;
-      }
+    do {
+      memcpy(p, data, w * 2);
+      data += w;
       p += width;
-    }
+    } while (--h);
 
     return 1;
   }
