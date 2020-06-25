@@ -1,7 +1,7 @@
 #pragma GCC optimize ("O3")
 
 #include <M5Stack.h>
-//#include <M5StackUpdater.h>     // https://github.com/tobozo/M5Stack-SD-Updater/
+#include <M5StackUpdater.h>     // https://github.com/tobozo/M5Stack-SD-Updater/
 #include <esp_heap_caps.h>
 #include <vector>
 #include "src/MainClass.h"
@@ -32,7 +32,7 @@ bool loadImages(const String& path)
   uint8_t* tmp;
   while (file) {
     tmp = (uint8_t*)heap_caps_malloc(file.size(), MALLOC_CAP_DEFAULT);
-    if (!tmp) {
+    if (tmp) {
       file.read(tmp, file.size());
       fbufsize.push_back(file.size());
       fbuf.push_back(tmp);
@@ -108,8 +108,8 @@ void loop() {
       do {
         dirIndex = (dirIndex + (M5.BtnC.wasPressed() ? 1 : M5.BtnB.wasPressed() ? imageDirs.size() - 1 : 0)) % imageDirs.size();
       } while (!loadImages(imageDirs[dirIndex]));
-      lcd.fillRect(0,0,lcd.width(),lcd.height(),0);
       lcd.startWrite();
+      lcd.fillRect(0,0,lcd.width(),lcd.height(),0);
       break;
     }
 //    M5.Lcd.drawJpg(fbuf[i], fbufsize[i]);
