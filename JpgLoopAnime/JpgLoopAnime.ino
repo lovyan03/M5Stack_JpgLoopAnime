@@ -7,8 +7,6 @@
 #include "src/MainClass.h"
 #include "src/images.h"
 
-#include <LovyanGFX.hpp>
-
 static LGFX lcd;
 static MainClass main;
 

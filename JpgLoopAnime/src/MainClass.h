@@ -5,7 +5,9 @@
 
 #include <esp_heap_caps.h>
 
+#ifndef LOVYANGFX_HPP_
 #include <LovyanGFX.hpp>  // https://github.com/lovyan03/LovyanGFX/
+#endif
 
 #include "tjpgdClass.h"
 
