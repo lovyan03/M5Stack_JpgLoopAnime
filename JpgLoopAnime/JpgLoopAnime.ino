@@ -2,18 +2,20 @@
 
 #include <M5Stack.h>
 //#include <M5StackUpdater.h>     // https://github.com/tobozo/M5Stack-SD-Updater/
-#include <esp_heap_alloc_caps.h>
+#include <esp_heap_caps.h>
 #include <vector>
 #include "src/MainClass.h"
-#include "src/DMADrawer.h"
 #include "src/images.h"
 
-MainClass main;
+#include <LovyanGFX.hpp>
+
+static LGFX lcd;
+static MainClass main;
 
 // ここで画像ファイルのディレクトリ名を指定する
 std::vector<String> imageDirs = {"/image_dirname1", "/image_dirname2"};
 
-uint8_t dirIndex = 0;
+uint_fast8_t dirIndex = 0;
 std::vector<const uint8_t*> fbuf;
 std::vector<int32_t> fbufsize;
 uint32_t fpsCount = 0, fpsSec = 0;
@@ -31,8 +33,8 @@ bool loadImages(const String& path)
   File file = root.openNextFile();
   uint8_t* tmp;
   while (file) {
-    tmp = (uint8_t*)pvPortMallocCaps(file.size(), MALLOC_CAP_DEFAULT);
-    if (tmp > 0) {
+    tmp = (uint8_t*)heap_caps_malloc(file.size(), MALLOC_CAP_DEFAULT);
+    if (!tmp) {
       file.read(tmp, file.size());
       fbufsize.push_back(file.size());
       fbuf.push_back(tmp);
@@ -47,15 +49,18 @@ void setup() {
 
   M5.begin();
 
-#ifdef __M5STACKUPDATER_H
-  if(digitalRead(BUTTON_A_PIN) == 0) {
-     Serial.println("Will Load menu binary");
-     updateFromFS(SD);
-     ESP.restart();
-  }
+#if defined ( __M5STACKUPDATER_H )
+  #ifdef __M5STACKUPDATER_H
+    if(digitalRead(BUTTON_A_PIN) == 0) {
+       Serial.println("Will Load menu binary");
+       updateFromFS(SD);
+       ESP.restart();
+    }
+  #endif
 #endif
 
-  main.setup(&M5.Lcd);
+  lcd.begin();
+  main.setup(&Lcd);
 
 //  loadImages(imageDirs[dirIndex]);
   fbuf.clear();
@@ -92,38 +97,46 @@ void setup() {
   fbufsize.push_back(image_029_jpg_len); fbuf.push_back(image_029_jpg);
   fbufsize.push_back(image_030_jpg_len); fbuf.push_back(image_030_jpg);
 
+  lcd.startWrite();
 }
 
 void loop() {
+//auto us = micros();
   for (int i = 0; i < fbuf.size(); i++) {
     M5.update();
     if (M5.BtnB.wasPressed() || M5.BtnC.wasPressed()) {
-      main.wait();
+      delay(10);
+      lcd.endWrite();
       do {
         dirIndex = (dirIndex + (M5.BtnC.wasPressed() ? 1 : M5.BtnB.wasPressed() ? imageDirs.size() - 1 : 0)) % imageDirs.size();
       } while (!loadImages(imageDirs[dirIndex]));
-      M5.Lcd.fillRect(0,0,M5.Lcd.width(),M5.Lcd.height(),0);
+      lcd.fillRect(0,0,lcd.width(),lcd.height(),0);
+      lcd.startWrite();
       break;
     }
 //    M5.Lcd.drawJpg(fbuf[i], fbufsize[i]);
     main.drawJpg(fbuf[i], fbufsize[i]);
+//*
     fpsCount++;
     if (fpsSec != millis() / 1000) {
       fpsSec = millis() / 1000;
       Serial.printf("fps:%d\r\n",fpsCount);
       fpsCount = 0;
     }
+//*/
   }
 
   for (int i = fbuf.size() - 2; i != 0; i--) {
 //    M5.Lcd.drawJpg(fbuf[i], fbufsize[i]);
     main.drawJpg(fbuf[i], fbufsize[i]);
+//*
     fpsCount++;
     if (fpsSec != millis() / 1000) {
       fpsSec = millis() / 1000;
       Serial.printf("fps:%d\r\n",fpsCount);
       fpsCount = 0;
     }
+//*/
   }
-
+//Serial.printf("%d usec\r\n", (int)(micros() - us));
 }

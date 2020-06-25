@@ -3,52 +3,54 @@
 
 #pragma GCC optimize ("O3")
 
+#include <esp_heap_caps.h>
+
+#include <LovyanGFX.hpp>  // https://github.com/lovyan03/LovyanGFX/
+
 #include "tjpgdClass.h"
-#include "DMADrawer.h"
 
 class MainClass
 {
 public:
-  bool setup(TFT_eSPI* tft)
+  bool setup(LGFX* lcd)
   {
     Serial.println("MainClass setup.");
-    setup_t s;
-    tft->getSetup(s);
 
-    _tft_width = tft->width();
-    _tft_height = tft->height();
+    _lcd = lcd;
+    _lcd_width = lcd->width();
+    _lcd_height = lcd->height();
 
-    _dma.init(s);
-    _dmabufs[0] = (uint16_t*)pvPortMallocCaps(_tft_width * 16 * 2, MALLOC_CAP_DMA);
-    _dmabufs[1] = (uint16_t*)pvPortMallocCaps(_tft_width * 16 * 2, MALLOC_CAP_DMA);
+    for (int i = 0; i < 2; ++i) _dmabufs[i] = (uint16_t*)heap_caps_malloc(_lcd_width * 16 * 2, MALLOC_CAP_DMA);
+
     _dmabuf = _dmabufs[0];
 
-   _jdec.multitask_begin();
+    _jdec.multitask_begin();
+
+    return true;
   }
 
   bool drawJpg(const uint8_t* buf, int32_t len) {
     _filebuf = buf;
     _fileindex = 0;
     _remain = len;
-    JRESULT jres = _jdec.prepare(jpgRead, this);
-    if (jres != JDR_OK) {
+    TJpgD::JRESULT jres = _jdec.prepare(jpgRead, this);
+    if (jres != TJpgD::JDR_OK) {
       Serial.printf("prepare failed! %d\r\n", jres);
       return false;
     }
-    _jpg_x = (_tft_width - _jdec.width) / 2;
-    _jpg_y = (_tft_height- _jdec.height) / 2;
+
+    _jpg_x = (_lcd_width - _jdec.width) / 2;
+    _jpg_y = (_lcd_height- _jdec.height) / 2;
     jres = _jdec.decomp_multitask(jpgWrite, jpgWriteRow);
-    if (jres != JDR_OK) {
+    if (jres != TJpgD::JDR_OK) {
       Serial.printf("decomp failed! %d\r\n", jres);
       return false;
     }
     return true;
   }
 
-  void wait() { delay(10); _dma.wait(); }
-
 private:
-  DMADrawer _dma;
+  LGFX* _lcd;
   uint16_t* _dmabufs[2];
   uint16_t* _dmabuf;
   TJpgD _jdec;
@@ -57,12 +59,12 @@ private:
   const uint8_t* _filebuf;
   uint32_t _fileindex;
 
-  uint_fast16_t _tft_width;
-  uint_fast16_t _tft_height;
+  uint_fast16_t _lcd_width;
+  uint_fast16_t _lcd_height;
   uint_fast16_t _jpg_x;
   uint_fast16_t _jpg_y;
 
-  static uint16_t jpgRead(TJpgD *jdec, uint8_t *buf, uint16_t len) {
+  static uint32_t jpgRead(TJpgD *jdec, uint8_t *buf, uint32_t len) {
     MainClass* me = (MainClass*)jdec->device;
     if (len > me->_remain)  len = me->_remain;
     if (buf) {
@@ -73,16 +75,15 @@ private:
     return len;
   }
 
-  static uint16_t jpgWrite(TJpgD *jdec, void *bitmap, JRECT *rect) {
+  static uint32_t jpgWrite(TJpgD *jdec, void *bitmap, TJpgD::JRECT *rect) {
     MainClass* me = (MainClass*)jdec->device;
     uint16_t *p = me->_dmabuf;
     uint16_t *data = (uint16_t*)bitmap;
-    uint_fast16_t width = jdec->width;
-    uint_fast16_t x = rect->left;
-    uint_fast16_t y = rect->top;
-    uint_fast8_t w = rect->right + 1 - x;
-    uint_fast8_t h = rect->bottom + 1 - y;
-    if (w < 0 || h < 0) return 1;
+    int_fast16_t width = jdec->width;
+    int_fast16_t x = rect->left;
+    int_fast16_t y = rect->top;
+    int_fast8_t w = rect->right + 1 - x;
+    int_fast8_t h = rect->bottom + 1 - y;
 
     p += x;
     do {
@@ -94,15 +95,14 @@ private:
     return 1;
   }
 
-  static uint16_t jpgWriteRow(TJpgD *jdec, uint16_t y, uint8_t h) {
+  static uint32_t jpgWriteRow(TJpgD *jdec, uint32_t y, uint32_t h) {
     static int flip = 0;
     MainClass* me = (MainClass*)jdec->device;
-    me->_dma.draw( me->_jpg_x
-                 , me->_jpg_y + y
-                 , jdec->width
-                 , h
-                 , me->_dmabuf
-                 );
+    if (y == 0)
+      me->_lcd->setAddrWindow(me->_jpg_x, me->_jpg_y, jdec->width, jdec->height);
+
+      me->_lcd->pushPixelsDMA(me->_dmabuf, jdec->width * h * 2);
+
     flip = !flip;
     me->_dmabuf = me->_dmabufs[flip];
     return 1;
