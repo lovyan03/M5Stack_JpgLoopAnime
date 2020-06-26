@@ -151,7 +151,7 @@ inline uint_fast8_t BYTECLIP (
 /*----------------------------------*/
 
 #define dma565Color(r, g, b) \
-        (uint16_t)( ((b >> 3) << 8) | ((g >> 2) << 13) | ((g >> 5) | ((r>>3)<<3)))
+        ( ((b >> 3) << 8) | ((g >> 2) << 13) | ((g >> 5) | ((r>>3)<<3)))
 
 
 /*-----------------------------------------------------------------------*/
@@ -611,10 +611,11 @@ static TJpgD::JRESULT mcu_output (
 				g = BYTECLIP(yy - (((int32_t)(0.34414 * 256) * cb
 								  + (int32_t)(0.71414 * 256) * cr) >> 8));
 				b = BYTECLIP(yy + (((int32_t)(1.772   * 256) * cb) >> 8));
-				*rgb16++ = dma565Color(r, g, b);
+				rgb16[ix] = dma565Color(r, g, b);
 			} while (++ix & 7);
 			py += 64 - 8;	/* Jump to next block if double block heigt */
 		} while (ix != mx);
+		rgb16 += mx;
 	} while (++iy != my);
 
 	if (rx < mx) {
@@ -637,11 +638,11 @@ static TJpgD::JRESULT mcu_output (
 
 static TJpgD::JRESULT restart (
 	TJpgD* jd,		/* Pointer to the decompressor object */
-	uint16_t rstn	/* Expected restert sequense number */
+	uint_fast16_t rstn	/* Expected restert sequense number */
 )
 {
 	uint_fast16_t dc;
-	uint16_t d;
+	uint_fast16_t d;
 	uint8_t *dp;
 
 
@@ -692,7 +693,7 @@ TJpgD::JRESULT TJpgD::prepare (
 	uint_fast16_t i, len;
 	TJpgD::JRESULT rc;
 
-	const uint16_t sz_pool = 3100;
+	static constexpr uint_fast16_t sz_pool = 3100;
 	static uint8_t pool[sz_pool];
 
 
