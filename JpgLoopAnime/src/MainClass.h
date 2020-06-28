@@ -14,7 +14,7 @@
 class MainClass
 {
 public:
-  bool setup(LGFX* lcd)
+  bool setup(LovyanGFX* lcd)
   {
     Serial.println("MainClass setup.");
 
@@ -52,7 +52,7 @@ public:
   }
 
 private:
-  LGFX* _lcd;
+  LovyanGFX* _lcd;
   uint16_t* _dmabufs[2];
   uint16_t* _dmabuf;
   TJpgD _jdec;
