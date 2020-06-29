@@ -1,4 +1,16 @@
-#pragma GCC optimize ("O3")
+/*----------------------------------------------------------------------------/
+  M5Stack JpgLoopAnime  
+
+Original Source:  
+ https://github.com/lovyan03/M5Stack_JpgLoopAnime/  
+
+Licence:  
+ [MIT](https://github.com/lovyan03/M5Stack_JpgLoopAnime/blob/master/LICENSE)  
+
+Author:  
+ [lovyan03](https://twitter.com/lovyan03)  
+
+/----------------------------------------------------------------------------*/
 
 #include <M5Stack.h>
 #include <M5StackUpdater.h>     // https://github.com/tobozo/M5Stack-SD-Updater/
