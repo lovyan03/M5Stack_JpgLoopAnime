@@ -263,13 +263,13 @@ static int_fast16_t bitext (	/* >=0: extracted data, <0: error code */
 )
 {
 	uint8_t *dp, *dpend;
-	uint_fast8_t msk, s, shift;
+	uint_fast8_t msk, s;
 	uint_fast16_t v;
 
 	msk = jd->dmsk; dp = jd->dptr; dpend = jd->dpend;	/* Bit mask, number of data available, read ptr */
 	s = *dp; v = 0;
 
-	do {
+	for (;;) {
 		if (!msk) {				/* Next byte? */
 			msk = 8;			/* Read from MSB */
 			if (++dp == dpend) {			/* No input data is available, re-fill input buffer */
@@ -288,13 +288,15 @@ static int_fast16_t bitext (	/* >=0: extracted data, <0: error code */
 				*dp = s;			/* The flag is a data 0xFF */
 			}
 		}
-		shift = msk < nbit ? msk : nbit;
-		msk -= shift;
-		v = (v << shift) | ((s >> msk) & ((1 << shift) - 1));	/* Get bits */
-	} while (nbit -= shift);
-	jd->dmsk = msk; jd->dptr = dp;
-
-	return v;
+		if (msk >= nbit) {
+			msk -= nbit;
+			jd->dmsk = msk; jd->dptr = dp;
+			return v | ((s >> msk) & ((1 << nbit) - 1));	/* Get bits */
+		}
+		nbit -= msk;
+		v |= (s & ((1 << msk) - 1)) << nbit;	/* Get bits */
+		msk = 0;
+	}
 }
 
 
