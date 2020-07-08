@@ -319,14 +319,14 @@ static int_fast16_t huffext (	/* >=0: decoded data, <0: error code */
 	const uint8_t* hdata	/* Pointer to the data table */
 )
 {
-	uint8_t *dp, *dpend;
-	uint_fast8_t msk, s, bl;
-	uint_fast16_t v;
+	uint_fast8_t msk = jd->dmsk;
+	uint8_t *dpend = jd->dpend;	/* Bit mask, number of data available, read ptr */
+	uint8_t *dp = jd->dptr;
+	uint_fast8_t s = *dp;
+	uint_fast8_t v = 0;
+	uint_fast8_t bl = 16;	/* Max code length */
 
-	msk = jd->dmsk; dp = jd->dptr; dpend = jd->dpend;	/* Bit mask, number of data available, read ptr */
-	s = *dp; v = 0;
-	bl = 16;	/* Max code length */
-	do {
+	for (;;) {
 		if (!msk) {				/* Next byte? */
 			msk = 8;			/* Read from MSB */
 			if (++dp == dpend) {			/* No input data is available, re-fill input buffer */
@@ -346,25 +346,22 @@ static int_fast16_t huffext (	/* >=0: decoded data, <0: error code */
 			}
 		}
 		do {
-			v += v + ((s >> (--msk)) & 1);	/* Get a bit */
+			v = (v << 1) + ((s >> (--msk)) & 1);	/* Get a bit */
 			uint_fast8_t nd = *++hbits;
 			if (nd) {
 				do {
 					++hdata;
 				} while (v != *++hcode && --nd);	/* Search the code word in this bit length */
 				if (nd) {							/* Matched? */
-					jd->dmsk = msk; jd->dptr = dp;
+					jd->dmsk = msk;
+					jd->dptr = dp;
 					return *hdata;					/* Return the decoded data */
 				}
 			}
-		} while (msk && --bl);
-	} while (bl);
-
-	return 0 - (int_fast16_t)TJpgD::JDR_FMT1;	/* Err: code not found (may be collapted data) */
+			if (!--bl) return 0 - (int_fast16_t)TJpgD::JDR_FMT1;	/* Err: code not found (may be collapted data) */
+		} while (msk);
+	}
 }
-
-
-
 
 /*-----------------------------------------------------------------------*/
 /* Apply Inverse-DCT in Arai Algorithm (see also aa_idct.png)            */
@@ -381,28 +378,12 @@ static void block_idct (
 
 	/* Process columns */
 	for (size_t i = 0; i < 8; ++i) {
-		/* Get and Process the odd elements */
-		t10 = src[8 * 1];
-		t11 = src[8 * 7] + t10;
-		t10 = (t10 << 1) - t11;
-
-		v7  = src[8 * 3];
-		t12 = src[8 * 5] - v7;
-		v7 += v7 + t11 + t12;
-
-		t13 = (t10 + t12) * M5 >> 8;
-		t12 = t12 * M4 >> 8;
-		v6 = t13 - (t12 + v7);
-		v5 = ((t11 << 1) - v7) * M13 >> 8;
-		v5 -= v6;
-		t10 = t10 * M2 >> 8;
-		v4 = t13 - (t10 + v5);
-
 		/* Get and Process the even elements */
 		t11 = src[8 * 2];
 		t13 = src[8 * 6] + t11;
 		t11 = (t11 << 1) - t13;
-		t11 = (t11 * M13 >> 8) - t13;
+		t11 = t11 * M13 >> 8;
+		t11 = t11 - t13;
 
 		t12 = src[8 * 0];
 		t10 = src[8 * 4] + t12;
@@ -412,6 +393,28 @@ static void block_idct (
 		v3 = t10 - t13;
 		v1 = t12 + t11;
 		v2 = t12 - t11;
+
+		/* Get and Process the odd elements */
+		t10 = src[8 * 1];
+		t11 = src[8 * 7] + t10;
+		t10 = (t10 << 1) - t11;
+
+		v7  = src[8 * 3];
+		t12 = src[8 * 5] - v7;
+		v7 = (v7 << 1) + t12;
+		v7 += t11;
+
+		t13 = t10 + t12;
+		t13 = t13 * M5 >> 8;
+		t12 = t12 * M4 >> 8;
+		v6 = t12 + v7;
+		v6 = t13 - v6;
+		t11 = (t11 << 1) - v7;
+		v5 = t11 * M13 >> 8;
+		v5 -= v6;
+		v4 = t10 * M2 >> 8;
+		v4 += v5;
+		v4 = t13 - v4;
 
 		/* Write-back transformed values */
 		src[8 * 0] = v0 + v7;
@@ -435,9 +438,10 @@ static void block_idct (
 		t10 = v0 + v2;
 		t12 = v0 - v2;
 
-		v1 = src[2];
-		v3 = src[6] + v1;
-		t11 = ((v1 << 1) - v3) * M13 >> 8;
+		t11 = src[2];
+		v3 = src[6] + t11;
+		t11 = (t11 << 1) - v3;
+		t11 = t11 * M13 >> 8;
 		t11 -= v3;
 
 		v0 = t10 + v3;
@@ -452,15 +456,20 @@ static void block_idct (
 
 		v7 = src[3];
 		t12 = src[5] - v7;
-		v7 += v7 + t11 + t12;
+		v7 = (v7 << 1) + t12;
+		v7 += t11;
 
-		t13 = (t10 + t12) * M5 >> 8;
+		t13 = t10 + t12;
+		t13 = t13 * M5 >> 8;
 		t12 = t12 * M4 >> 8;
-		v6 = t13 - (t12 + v7);
-		v5 = ((t11 << 1) - v7) * M13 >> 8;
+		v6 = t12 + v7;
+		v6 = t13 - v6;
+		t11 = (t11 << 1) - v7;
+		v5 = t11 * M13 >> 8;
 		v5 -= v6;
-		t10 = t10 * M2 >> 8;
-		v4 = t13 - (t10 + v5);
+		v4 = t10 * M2 >> 8;
+		v4 += v5;
+		v4 = t13 - v4;
 
 		/* Descale the transformed values 8 bits and output */
 		dst[0] = BYTECLIP((v0 + v7) >> 8);
