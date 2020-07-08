@@ -103,7 +103,7 @@ private:
     if (y == 0)
       me->_lcd->setAddrWindow(me->_jpg_x, me->_jpg_y, jdec->width, jdec->height);
 
-      me->_lcd->pushPixelsDMA(me->_dmabuf, jdec->width * h);
+    me->_lcd->pushPixelsDMA(me->_dmabuf, jdec->width * h);
 
     flip = !flip;
     me->_dmabuf = me->_dmabufs[flip];

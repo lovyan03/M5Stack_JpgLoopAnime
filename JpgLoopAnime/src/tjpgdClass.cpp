@@ -372,7 +372,9 @@ static void block_idct (
 	uint8_t* dst	/* Pointer to the destination to store the block as byte array */
 )
 {
-	const int32_t M13 = (int32_t)(1.41421*256), M2 = (int32_t)(1.08239*256), M4 = (int32_t)(2.61313*256), M5 = (int32_t)(1.84776*256);
+	const int32_t M13 = (int32_t)(1.41421*256), M4 = (int32_t)(2.61313*256);
+	const float F2 = 1.08239, F5 = 1.84776;
+
 	int32_t v0, v1, v2, v3, v4, v5, v6, v7;
 	int32_t t10, t11, t12, t13;
 
@@ -405,14 +407,14 @@ static void block_idct (
 		v7 += t11;
 
 		t13 = t10 + t12;
-		t13 = t13 * M5 >> 8;
+		t13 = t13 * F5;
 		t12 = t12 * M4 >> 8;
 		v6 = t12 + v7;
 		v6 = t13 - v6;
 		t11 = (t11 << 1) - v7;
 		v5 = t11 * M13 >> 8;
 		v5 -= v6;
-		v4 = t10 * M2 >> 8;
+		v4 = t10 * F2;
 		v4 += v5;
 		v4 = t13 - v4;
 
@@ -439,7 +441,8 @@ static void block_idct (
 		t12 = v0 - v2;
 
 		t11 = src[2];
-		v3 = src[6] + t11;
+		v3 = src[6];
+		v3 += t11;
 		t11 = (t11 << 1) - v3;
 		t11 = t11 * M13 >> 8;
 		t11 -= v3;
@@ -450,24 +453,26 @@ static void block_idct (
 		v2 = t12 - t11;
 
 		/* Get and Process the odd elements */
-		t10 = src[1];
-		t11 = src[7] + t10;
-		t10 = (t10 << 1) - t11;
+		v4 = src[1];
+		v5 = src[7];
+		v5 += v4;
+		v4 = (v4 << 1) - v5;
 
 		v7 = src[3];
-		t12 = src[5] - v7;
-		v7 = (v7 << 1) + t12;
-		v7 += t11;
+		v6 = src[5];
+		v6 -= v7;
+		v7 = (v7 << 1) + v6;
+		v7 += v5;
 
-		t13 = t10 + t12;
-		t13 = t13 * M5 >> 8;
-		t12 = t12 * M4 >> 8;
-		v6 = t12 + v7;
+		t13 = v4 + v6;
+		t13 = t13 * F5;
+		v6 = v6 * M4 >> 8;
+		v6 = v6 + v7;
 		v6 = t13 - v6;
-		t11 = (t11 << 1) - v7;
-		v5 = t11 * M13 >> 8;
+		v5 = (v5 << 1) - v7;
+		v5 = v5 * M13 >> 8;
 		v5 -= v6;
-		v4 = t10 * M2 >> 8;
+		v4 = v4 * F2;
 		v4 += v5;
 		v4 = t13 - v4;
 
