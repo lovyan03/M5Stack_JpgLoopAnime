@@ -388,7 +388,8 @@ static void block_idct (
 		t11 = t11 - t13;
 
 		t12 = src[8 * 0];
-		t10 = src[8 * 4] + t12;
+		t10 = src[8 * 4];
+		t10 += t12;
 		t12 = (t12 << 1) - t10;
 
 		v0 = t10 + t13;
@@ -435,10 +436,10 @@ static void block_idct (
 	src -= 8;
 	for (size_t i = 0; i < 8; ++i) {
 		/* Get and Process the even elements */
-		v0 = src[0] + (128L << 8);	/* remove DC offset (-128) here */
-		v2 = src[4];
-		t10 = v0 + v2;
-		t12 = v0 - v2;
+		t12 = src[0] + (128L << 8);	/* remove DC offset (-128) here */
+		t10 = src[4];
+		t10 += t12;
+		t12 = (t12 << 1) - t10;
 
 		t11 = src[2];
 		v3 = src[6];
@@ -467,7 +468,7 @@ static void block_idct (
 		t13 = v4 + v6;
 		t13 = t13 * F5;
 		v6 = v6 * M4 >> 8;
-		v6 = v6 + v7;
+		v6 += v7;
 		v6 = t13 - v6;
 		v5 = (v5 << 1) - v7;
 		v5 = v5 * M13 >> 8;
