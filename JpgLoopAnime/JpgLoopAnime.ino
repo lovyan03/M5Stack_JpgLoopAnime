@@ -70,7 +70,7 @@ void setup() {
 #endif
 
   lcd.begin();
-  main.setup(&Lcd);
+  main.setup(&lcd);
 
 //  loadImages(imageDirs[dirIndex]);
   fbuf.clear();
