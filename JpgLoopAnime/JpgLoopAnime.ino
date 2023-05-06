@@ -12,15 +12,23 @@ Author:
 
 /----------------------------------------------------------------------------*/
 
-#include <M5Stack.h>
+#include <SD.h>
+#include <M5Unified.h>
+// For SD-Updater defineds
+# define HAS_M5_API
+# define SDU_USE_DISPLAY
+# define HAS_LGFX
+# define SDU_Sprite LGFX_Sprite
+# define SDU_DISPLAY_TYPE M5GFX*
+# define SDU_DISPLAY_OBJ_PTR &M5.Display
 #include <M5StackUpdater.h>     // https://github.com/tobozo/M5Stack-SD-Updater/
 #include <esp_heap_caps.h>
 #include <vector>
 #include "src/MainClass.h"
 #include "src/images.h"
 
-static LGFX lcd;
-static MainClass main;
+static auto& lcd = M5.Display;
+static MainClass mainClass;
 
 // ここで画像ファイルのディレクトリ名を指定する
 std::vector<String> imageDirs = {"/image_dirname1", "/image_dirname2"};
@@ -60,17 +68,10 @@ void setup() {
   M5.begin();
 
 #if defined ( __M5STACKUPDATER_H )
-  #ifdef __M5STACKUPDATER_H
-    if(digitalRead(BUTTON_A_PIN) == 0) {
-       Serial.println("Will Load menu binary");
-       updateFromFS(SD);
-       ESP.restart();
-    }
-  #endif
+  checkSDUpdater(SD);
 #endif
 
-  lcd.begin();
-  main.setup(&lcd);
+  mainClass.setup(&lcd);
 
 //  loadImages(imageDirs[dirIndex]);
   fbuf.clear();
@@ -124,8 +125,8 @@ void loop() {
       lcd.fillRect(0,0,lcd.width(),lcd.height(),0);
       break;
     }
-//    M5.Lcd.drawJpg(fbuf[i], fbufsize[i]);
-    main.drawJpg(fbuf[i], fbufsize[i]);
+//    lcd.drawJpg(fbuf[i], fbufsize[i]);
+    mainClass.drawJpg(fbuf[i], fbufsize[i]);
 //*
     fpsCount++;
     if (fpsSec != millis() / 1000) {
@@ -137,8 +138,8 @@ void loop() {
   }
 
   for (int i = fbuf.size() - 2; i != 0; i--) {
-//    M5.Lcd.drawJpg(fbuf[i], fbufsize[i]);
-    main.drawJpg(fbuf[i], fbufsize[i]);
+//    lcd.drawJpg(fbuf[i], fbufsize[i]);
+    mainClass.drawJpg(fbuf[i], fbufsize[i]);
 //*
     fpsCount++;
     if (fpsSec != millis() / 1000) {
