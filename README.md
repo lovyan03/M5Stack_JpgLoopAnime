@@ -1,7 +1,7 @@
 M5Stack JpgLoopAnime
 ===
 
-M5Stack用 JPEG ループアニメーション
+M5Stack シリーズ (Basic, Gray, Core2, etc) 用 JPEG ループアニメーション
 
 ## Description
   
@@ -15,8 +15,12 @@ JpgLoopAnime.ino を開き、imageDirに画像ファイルのあるディレク�
 
 ## 必要なライブラリ Requirement library
 
-* https://github.com/lovyan03/LovyanGFX/  
+* https://github.com/m5stack/M5Unified/
+* https://github.com/m5stack/M5GFX/
 * https://github.com/tobozo/M5Stack-SD-Updater/  
+
+
+動作確認は M5Unified 0.1.6 M5GFX 0.1.6 M5Stack-SD-Updater 1.2.5 にて行いました。
 
 
 ## 含まれているライブラリ Included library
