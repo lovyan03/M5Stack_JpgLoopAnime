@@ -5,9 +5,7 @@
 
 #include <esp_heap_caps.h>
 
-#ifndef LOVYANGFX_HPP_
-#include <LovyanGFX.hpp>  // https://github.com/lovyan03/LovyanGFX/
-#endif
+#include <M5GFX.h> // https://github.com/m5stack/M5GFX
 
 #include "tjpgdClass.h"
 
@@ -61,8 +59,8 @@ public:
     } else {
       _off_y = 0;
     }
-
-    jres = _jdec.decomp_multitask(_fp_jpgWrite, jpgWriteRow);
+    //jres = _jdec.decomp(_fp_jpgWrite, jpgWriteRow); // Single core
+    jres = _jdec.decomp_multitask(_fp_jpgWrite, jpgWriteRow); // Multi cores
     if (jres != TJpgD::JDR_OK) {
       Serial.printf("decomp failed! %d\r\n", jres);
       return false;
@@ -208,10 +206,17 @@ private:
   static uint32_t jpgWriteRow(TJpgD *jdec, uint32_t y, uint32_t h) {
     static int flip = 0;
     MainClass* me = (MainClass*)jdec->device;
+    int_fast16_t oy = me->_off_y;
+    int_fast16_t bottom = y + h;
+    if(bottom < oy || y >= oy + me->_lcd_height) { return 1; }
     if (y == 0) {
-      me->_lcd->setAddrWindow(me->_jpg_x, me->_jpg_y, jdec->width, jdec->height);
+      me->_lcd->setAddrWindow(me->_jpg_x, me->_jpg_y, me->_out_width, me->_out_height);
     }
-    me->_lcd->pushPixelsDMA(me->_dmabuf, jdec->width * h);
+    if(oy > 0) {
+      if(oy > y && oy < bottom) { h -= oy % h; }
+      if(oy + me->_lcd_height > y && oy + me->_lcd_height < y + h) { h -= (y + h) - (me->_lcd_height + oy); }
+    }
+    me->_lcd->pushPixelsDMA(reinterpret_cast<::lgfx::swap565_t*>(me->_dmabuf), me->_out_width * h);
 
     flip = !flip;
     me->_dmabuf = me->_dmabufs[flip];
